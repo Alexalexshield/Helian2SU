@@ -15,9 +15,13 @@
 #include "host/ble_hs.h"
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
+#include "driver/uart.h"
+
+#include "app_uart.h"
+#include "app_ble.h"
 
 
-#define DEVICE_NAME "UNDERGROUND BEACON"
+#define DEVICE_NAME "Helian2SU"
 uint8_t ble_addr_type;
 void ble_app_advertise(void);
 
@@ -45,26 +49,28 @@ uint16_t conn_hdl;
     #define BATTERY_LEVEL                        0x2A19
 
 
+uint16_t analog_signal[190];
+
 
 static int dump_cb(uint16_t conn_handler, uint16_t attr_handler, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
     printf("dumb call back from: %d\n", attr_handler);
 
-    char xyzaxis[20];
-    xyzaxis[0]='X';
-    xyzaxis[1]='Y';
-    xyzaxis[2]='Z';
-    xyzaxis[3]='=';
-    for (uint8_t i = 4; i < sizeof(xyzaxis)/sizeof(xyzaxis[0]); i++)
-    {
-        xyzaxis[i] = (char)(i%3 + rand()%10); 
-    }
-
-    os_mbuf_append(ctxt->om, &xyzaxis, sizeof(xyzaxis));
-
-     printf("%s\n", xyzaxis);
-
     return 0;
+}
+
+void send_spp_data()
+{
+
+    for (uint8_t i = 0; i < sizeof(analog_signal)/sizeof(analog_signal[0]); i++)
+    {
+        analog_signal[i] = (i%3 + 10*(rand()%10)); //beauty graph
+        printf("%d", analog_signal[i]);
+    }
+    analog_signal[189]='\0';
+    printf("\n");
+    struct os_mbuf *om = ble_hs_mbuf_from_flat(analog_signal,sizeof(analog_signal));
+    ble_gattc_notify_custom(conn_hdl, spp_char_att_hdl, om);   
 }
 
 static int device_write(uint16_t conn_handler, uint16_t attr_handler, struct ble_gatt_access_ctxt *ctxt, void *arg)
@@ -100,23 +106,6 @@ void update_batter_status()
     ble_gattc_notify_custom(conn_hdl, battery_char_att_hdl, om);   
 }
 
-uint8_t xyzaxis[19];
-void send_spp_data()
-{
-    // xyzaxis[0]='X';
-    // xyzaxis[1]='Y';
-    // xyzaxis[2]='Z';
-    // xyzaxis[3]='=';
-    for (uint8_t i = 0; i < sizeof(xyzaxis)/sizeof(xyzaxis[0]); i++)
-    {
-        xyzaxis[i] = (i%3 + 10*(rand()%10)); //beauty graph
-        printf("%d", xyzaxis[i]);
-    }
-    xyzaxis[18]='\0';
-    printf("\n");
-    struct os_mbuf *om = ble_hs_mbuf_from_flat(xyzaxis,sizeof(xyzaxis)); 
-    ble_gattc_notify_custom(conn_hdl, spp_char_att_hdl, om);   
-}
 
 static const struct ble_gatt_svc_def gat_svcs[] ={
     {
@@ -273,9 +262,8 @@ void host_task(void *param)
 
 void app_main(void)
 {
-    nvs_flash_init();
-    esp_nimble_hci_and_controller_init();
-    nimble_port_init();
+    ble_init();
+    uart_init();
 
     ESP_ERROR_CHECK(ble_svc_gap_device_name_set(DEVICE_NAME));
     ble_svc_gap_init();
@@ -283,6 +271,9 @@ void app_main(void)
 
     ble_gatts_count_cfg(gat_svcs);
     ble_gatts_add_svcs(gat_svcs);
+
+
+
 
     timer_handler = xTimerCreate("update_batter_status", pdMS_TO_TICKS(1000), pdTRUE, NULL, update_batter_status);
     timer_handler_spp = xTimerCreate("send_spp_data", pdMS_TO_TICKS(1000), pdTRUE, NULL, send_spp_data);

@@ -1,0 +1,35 @@
+{
+  "env": {
+      "IDF_TOOLS": "C:/esp/.espressif/tools",
+      "IDF_PATH": "c:/esp/esp-idf"
+  },
+  "configurations": [
+      {
+          "name": "esp32",
+          "browse": {
+              "path": [
+                  "${workspaceFolder}",
+                  "${IDF_PATH}",
+                  "${IDF_TOOLS}"
+              ],
+              "limitSymbolsToIncludedHeaders": true
+          },
+          "includePath": [
+              "${workspaceFolder}",
+              "${workspaceFolder}/build/config",
+              "${workspaceFolder}/build/bootloader/config",
+              "C:/esp/.espressif/tools/riscv32-esp-elf/1.24.0.123_64eb9ff-8.4.0/riscv32-esp-elf/riscv32-esp-elf/include",
+              "C:/esp/.espressif/tools/riscv32-esp-elf/1.24.0.123_64eb9ff-8.4.0/riscv32-esp-elf/lib/gcc/riscv32-esp-elf/8.4.0/include",
+              "C:/esp/esp-idf/components/log/include",
+              "C:/esp/esp-idf/components/esp_rom/include"
+          ],
+          "defines": [],
+          "cStandard": "c11",
+          "cppStandard": "c++17",
+          "intelliSenseMode": "clang-x64",
+          "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+          "compilerPath": "C:\\esp\\.espressif\\tools\\xtensa-esp32-elf\\esp-2020r3-8.4.0\\xtensa-esp32-elf\\bin\\xtensa-esp32-elf-gcc.exe"
+      }
+  ],
+  "version": 4
+}
