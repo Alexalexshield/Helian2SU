@@ -17,8 +17,8 @@ void ble_init(void);
 
 void ble_app_on_sync(void);
 
-void send_spp_data(void);
-void update_batter_status(void);
+void send_spp_data(TimerHandle_t xTimer);
+void update_batter_status(TimerHandle_t xTimer);
 
 
 #endif
