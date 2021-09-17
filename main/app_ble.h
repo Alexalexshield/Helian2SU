@@ -8,6 +8,17 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 
+#define DEVICE_NAME "Helian2SU"
+
+
+
+void ble_app_advertise(void);
 void ble_init(void);
+
+void ble_app_on_sync(void);
+
+void send_spp_data(void);
+void update_batter_status(void);
+
 
 #endif
