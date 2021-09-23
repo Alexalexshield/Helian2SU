@@ -6,12 +6,6 @@
 #include "config.h"
 #include "app_json.h"
 
-
-
-//"s" - analog signal, array of uint16_t [190] example: {"s":[13,32,255,14,14]} 
-//TODO: send analog signal via pattern interrupt
-//"c" - command from DSP
-
 static const char *TAG = "JSON";
 
 
@@ -64,7 +58,7 @@ void app_json_deserialize(char * arg){
 
 	if (cJSON_GetObjectItem(root,SIGNAL) != NULL)
 	{
-        cJSON * array = cJSON_GetObjectItem(root, "s");
+        cJSON * array = cJSON_GetObjectItem(root, SIGNAL);
 
 		for (uint16_t i = 0 ; i < sizeof(analog_signal)/sizeof(uint16_t); i++)
 		{
@@ -73,33 +67,43 @@ void app_json_deserialize(char * arg){
 		}
 	}
 
+	if (cJSON_GetObjectItem(root, DSP_COMMAND) !=NULL)
+	{
+		enum From_dsp_commands dsp_command = cJSON_GetObjectItem(root,"c")->valueint;
+		switch (status)
+		{
+		case fd_search_ok:
+			ESP_LOGI(TAG, "From DSP: %s", "quick search has been started");
+			//xTaskCreate(main_activity_task, "start_vlf", 4096, NULL, 5, NULL);
+			break;
+		case fd_mute_ok:
+			ESP_LOGI(TAG, "From DSP: %s", "current tag was muted");
+			//xTaskCreate(quick_search_task, "start_vlf", 4096, NULL, 5, NULL);
+			break;
+		default:
+			break;
+		}	
+	}
+
+	if (cJSON_GetObjectItem(root, F_DSP_D1) !=NULL)
+	{
+		D1 = cJSON_GetObjectItem(root,F_DSP_D1)->valueint;
+	}
+	if (cJSON_GetObjectItem(root, F_DSP_D2) !=NULL)
+	{
+		D2 = cJSON_GetObjectItem(root,F_DSP_D2)->valueint;
+	}
+	if (cJSON_GetObjectItem(root, F_DSP_D3) !=NULL)
+	{
+		D3 = cJSON_GetObjectItem(root,F_DSP_D3)->valueint;
+	}
+	if (cJSON_GetObjectItem(root, F_DSP_TAG_ID) !=NULL)
+	{
+		current_tag_id = cJSON_GetObjectItem(root,F_DSP_TAG_ID)->valueint;
+	}
+
 
     app_json_serialize();
-	// if (cJSON_GetObjectItem(root, "status") !=NULL)
-	// {
-	// 	int status = cJSON_GetObjectItem(root,"status")->valueint;
-	// 	switch (status)
-	// 	{
-	// 	case MAIN_ACTIVITY:
-	// 		ESP_LOGI(TAG, "status=%s", "MAIN_ACTIVITY");
-	// 		//xTaskCreate(main_activity_task, "start_vlf", 4096, NULL, 5, NULL);
-	// 		break;
-	// 	case QUICK_SEARCH:
-	// 		ESP_LOGI(TAG, "status=%s", "QUICK_SEARCH");
-	// 		//xTaskCreate(quick_search_task, "start_vlf", 4096, NULL, 5, NULL);
-	// 		break;
-	// 	case ID_SEARCH:
-	// 		ESP_LOGI(TAG, "status=%s", "ID_SEARCH");
-	// 		//xTaskCreate(id_search_task, "start_vlf", 4096, NULL, 5, NULL);
-	// 		break;
-	// 	case CALIBRATION:
-	// 		ESP_LOGI(TAG, "status=%s", "CALIBRATION");
-	// 		//xTaskCreate(calibration_task, "start_vlf", 4096, NULL, 5, NULL);
-	// 		break;
-	// 	default:
-	// 		break;
-	// 	}	
-	// }
-
+	
     cJSON_Delete(root);
 }

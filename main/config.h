@@ -5,6 +5,9 @@
 
 #define DEBUG_WITHOUT_STM
 
+
+#define SEARCH_UNIT_ID 0x01
+
 extern uint16_t analog_signal[19];
 extern uint8_t battery_level;
 
