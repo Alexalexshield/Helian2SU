@@ -19,7 +19,8 @@
     "malloc.h": "c",
     "stdio.h": "c",
     "cjson.h": "c",
-    "cstring": "cpp"
+    "cstring": "cpp",
+    "algorithm": "c"
   },
   "idf.espIdfPathWin": "C:/esp/esp-idf/",
   "idf.adapterTargetName": "esp32"

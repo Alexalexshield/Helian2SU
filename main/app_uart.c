@@ -3,6 +3,8 @@
 #include "esp_log.h"
 #include "cJSON.h"
 
+#include "config.h"
+#include "app_json.h"
 
 
 #define TXD_PIN 4
@@ -16,34 +18,6 @@
 
 QueueHandle_t uart_queue;
 
-//"s" - analog signal, array of uint16_t [190]
-
-void onGotData(const char* incomingBuffer)
-{
-    cJSON *payload = cJSON_Parse(incomingBuffer);
-
-    if (payload == NULL)
-    {
-        const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL)
-        {
-            fprintf(stderr, "Error before: %s\n", error_ptr);
-        }
-        goto end;
-    }
-
-    cJSON *contents = cJSON_GetObjectItem(payload,"s");
-    cJSON *sample;
-    cJSON_ArrayForEach(sample, contents)
-    {
-        ESP_LOGI(TAG,"%d", sample->valueint);
-        //do smth with sample
-    }
-
-
-    end:
-    cJSON_Delete(payload);
-}
 
 void uart_event_task(void*params)
 {
@@ -58,7 +32,7 @@ void uart_event_task(void*params)
             case(UART_DATA):       
                 ESP_LOGI(TAG,"UART data event");
                 uart_read_bytes(UART_NUM_1, received_buffer, uart_event.size, portMAX_DELAY);
-                onGotData(received_buffer);
+                app_json_deserialize(received_buffer);
                 break;
             case(UART_BREAK):      
                 ESP_LOGI(TAG,"UART break event");
