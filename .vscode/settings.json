@@ -8,7 +8,7 @@
     "editor.quickSuggestions": true
   },
   "C_Cpp.intelliSenseEngineFallback": "Enabled",
-  "idf.portWin": "COM6",
+  "idf.portWin": "COM8",
   "C_Cpp.errorSquiggles": "Disabled",
   "files.associations": {
     "*.ipp": "c",
@@ -20,7 +20,8 @@
     "stdio.h": "c",
     "cjson.h": "c",
     "cstring": "cpp",
-    "algorithm": "c"
+    "algorithm": "c",
+    "config.h": "c"
   },
   "idf.espIdfPathWin": "C:/esp/esp-idf/",
   "idf.adapterTargetName": "esp32"

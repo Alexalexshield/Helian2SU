@@ -3,23 +3,36 @@
 
 #include <stdio.h>
 
-#define DEBUG_WITHOUT_STM
+// #define DEBUG_WITHOUT_STM
 
 
 #define SEARCH_UNIT_ID 0x01
 
+extern double mag;
+extern double amp[3]; //[X,Y,Z];
 extern uint16_t analog_signal[19];
 extern uint8_t battery_level;
 
 extern int16_t current_tag_id;
 extern int16_t search_unit_id;
 
-extern char command_to_dsp;
-extern char command_to_app;
 
-extern int16_t D1;
-extern int16_t D2;
-extern int16_t D3;
+typedef struct
+{
+    uint16_t id;
+    uint16_t st;
+    float mag;
+    float amp[3];
+    float dist;
+    float dir;
+} MSG_DSP;
+
+typedef struct
+{
+    uint16_t id;
+    uint16_t st;
+    uint16_t cmd;
+} MSG_APP;
 
 
 #endif

@@ -20,5 +20,8 @@ void ble_app_on_sync(void);
 void send_spp_data(TimerHandle_t xTimer);
 void update_batter_status(TimerHandle_t xTimer);
 
+void send_ble_cmd_notification(void);
+
+extern char ble_send_msg[500];
 
 #endif

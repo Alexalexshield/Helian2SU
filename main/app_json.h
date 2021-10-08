@@ -2,10 +2,11 @@
 #define _APP_JSON_H
 
 
-#define SIGNAL "s"
+//state list from DSP controller
+
 
 char *app_json_serialize(void);
-void app_json_deserialize(char * arg);
+void dsp_json_deserialize(char * arg);
 
 
 #endif

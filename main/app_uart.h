@@ -6,8 +6,8 @@
 
 
 void uart_init(void);
-void uart_event_task(void*params);
+void uart_dsp_event_task(void*params);
 
-extern QueueHandle_t uart_queue;
+extern QueueHandle_t uart_dsp_queue;
 
 #endif

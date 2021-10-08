@@ -36,6 +36,9 @@ uint16_t battery_char_att_hdl;
 uint16_t spp_char_att_hdl;
 uint16_t conn_hdl;
 
+char ble_send_msg[500];
+// extern QueueHandle_t ble_send_queue;
+
 
 
 
@@ -43,6 +46,18 @@ static int dump_cb(uint16_t conn_handler, uint16_t attr_handler, struct ble_gatt
 {
     printf("dumb call back from: %d\n", attr_handler);
 
+    return 0;
+}
+
+void send_ble_cmd_notification(void)
+{
+    ble_gatts_chr_updated(spp_char_att_hdl);
+}
+
+static int send_dsp_msg(uint16_t conn_handler, uint16_t attr_handler, struct ble_gatt_access_ctxt *ctxt, void *arg)
+{
+    struct os_mbuf *om = ble_hs_mbuf_from_flat(ble_send_msg,strlen(ble_send_msg));
+    ble_gattc_notify_custom(conn_hdl, spp_char_att_hdl, om);
     return 0;
 }
 
@@ -145,7 +160,7 @@ static const struct ble_gatt_svc_def gat_svcs[] ={
                 .uuid       = BLE_UUID16_DECLARE(SPP_COMMAND_NOTIFY),
                 .flags      = BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_NOTIFY,
                 .val_handle = &spp_char_att_hdl,
-                .access_cb  = dump_cb
+                .access_cb  = send_dsp_msg
             },{0}}},
     {0}};
 
@@ -171,7 +186,7 @@ static int ble_gap_event(struct ble_gap_event *event, void *arg)
         break;         
     case BLE_GAP_EVENT_SUBSCRIBE:
         ESP_LOGI("GAP","BLE_GAP_EVENT_SUBSCRIBE");
-        if (event->subscribe.attr_handle == battery_char_att_hdl)
+        if (event->subscribe.attr_handle == battery_char_att_hdl)   //battery status subscription
         {
             if (event->subscribe.cur_notify == 1)
             {
@@ -182,17 +197,29 @@ static int ble_gap_event(struct ble_gap_event *event, void *arg)
                 xTimerStop(timer_handler_batter, 0);
             }
 
-        }else if (event->subscribe.attr_handle == spp_char_att_hdl)
+        }else if (event->subscribe.attr_handle == spp_char_att_hdl) //data subscription
         {
             if (event->subscribe.cur_notify == 1)
             {
-               xTimerStart(timer_handler_spp, 0);
+                // xTimerStart(timer_handler_spp, 0);
             }
             else
             {
                 xTimerStop(timer_handler_spp, 0);
             }
         }
+        // else if (event->subscribe.attr_handle == spp_cmd_att_hdl) //cmd subscription
+        // {
+        //     if (event->subscribe.cur_notify == 1)
+        //     {
+        //         //subscription to get cmd from TX and DSP
+        //         // xTimerStart(timer_handler_spp, 0);
+        //     }
+        //     else
+        //     {
+        //         // xTimerStop(timer_handler_spp, 0);
+        //     }
+        // }
 
         break;
     default: break;

@@ -16,23 +16,24 @@
 #define TAG "UART"
 
 
-QueueHandle_t uart_queue;
+QueueHandle_t uart_dsp_queue;
 
 
-void uart_event_task(void*params)
+void uart_dsp_event_task(void*params)
 {
     uart_event_t uart_event;   
     char *received_buffer = malloc(RX_BUF_SIZE);
     while (true)
     {
-        if(xQueueReceive(uart_queue, &uart_event, portMAX_DELAY))
+        if(xQueueReceive(uart_dsp_queue, &uart_event, portMAX_DELAY))
         {
             switch (uart_event.type)
             {
             case(UART_DATA):       
                 ESP_LOGI(TAG,"UART data event");
                 uart_read_bytes(UART_NUM_1, received_buffer, uart_event.size, portMAX_DELAY);
-                app_json_deserialize(received_buffer);
+                received_buffer[uart_event.size]='\0';
+                dsp_json_deserialize(received_buffer);
                 break;
             case(UART_BREAK):      
                 ESP_LOGI(TAG,"UART break event");
@@ -43,7 +44,7 @@ void uart_event_task(void*params)
             case(UART_FIFO_OVF):   
                 ESP_LOGI(TAG, "UART FIFO overflow event");
                 uart_flush(UART_NUM_1);
-                xQueueReset(uart_queue); 
+                xQueueReset(uart_dsp_queue); 
                 break;
             case(UART_FRAME_ERR):  
                 ESP_LOGI(TAG,"UART RX frame error event");
@@ -67,16 +68,16 @@ void uart_event_task(void*params)
 
 void uart_init(void)
 {
-    uart_config_t uart_config = {
+    uart_config_t uart_config_dsp = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE};
-    uart_param_config(UART_NUM_1, &uart_config);
+    uart_param_config(UART_NUM_1, &uart_config_dsp);
     uart_set_pin(UART_NUM_1, TXD_PIN, RXD_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
-    uart_driver_install(UART_NUM_1, RX_BUF_SIZE, TX_BUF_SIZE, 20, &uart_queue, 0);
+    uart_driver_install(UART_NUM_1, RX_BUF_SIZE, TX_BUF_SIZE, 20, &uart_dsp_queue, 0);
 
     // uart_pattern_queue_reset(UART_NUM_1, 20);
-    xTaskCreate(uart_event_task, "uart_event_task", 2048, NULL, 10, NULL);
+    xTaskCreate(uart_dsp_event_task, "uart__dsp_event_task", 2048, NULL, 10, NULL);
 }

@@ -12,11 +12,10 @@
 #include "app_ble.h"
 #include "config.h"
 
-
 void app_main(void)
 {
     ble_init();
     uart_init();
 
-    // for( ;; );
+    vTaskDelete(NULL);
 }

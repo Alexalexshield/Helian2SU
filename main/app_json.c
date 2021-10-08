@@ -3,10 +3,28 @@
 #include "string.h"
 #include "cJSON.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+
 #include "config.h"
 #include "app_json.h"
+#include "app_ble.h"
 
 static const char *TAG = "JSON";
+
+
+union { 
+ struct { 
+  uint8_t mobility:4; 
+  uint8_t xpt:1; 
+  uint8_t bit6:1; 
+  uint8_t batteryproblem:1; 
+  uint8_t masked:1; 
+ } s ; 
+ uint8_t status; 
+} m ;
 
 
 char *app_json_serialize(void){
@@ -19,11 +37,9 @@ char *app_json_serialize(void){
 	// esp_chip_info(&chip_info);
     //cJSON_AddArrayToObject(root, SIGNAL);
 
-
-
 for (int index = 0; index < (sizeof(analog_signal) / (sizeof(uint16_t))); ++index)
 {
-    cJSON_AddNumberToObject(samples, SIGNAL, (int) analog_signal[index]);
+    cJSON_AddNumberToObject(samples, "s", (int) analog_signal[index]);
     if (samples == NULL)
     {
         cJSON_Delete(samples);
@@ -46,64 +62,70 @@ for (int index = 0; index < (sizeof(analog_signal) / (sizeof(uint16_t))); ++inde
 }
 
 
+//MSG example from DSP:
+//{"id":1234,"st":123,"mag":0.123,"amp":[0.123,0.456,0.789],"dis":0.123,"dir":123}
 
-
-
-void app_json_deserialize(char * arg){
+void dsp_json_deserialize(char * arg){
 	ESP_LOGI(TAG, "Deserialize.....");
 	cJSON *root = cJSON_Parse(arg);
 	if (root == NULL){
 		ESP_LOGI(TAG, "invalid command");
 	}
 
-	if (cJSON_GetObjectItem(root,SIGNAL) != NULL)
-	{
-        cJSON * array = cJSON_GetObjectItem(root, SIGNAL);
 
-		for (uint16_t i = 0 ; i < sizeof(analog_signal)/sizeof(uint16_t); i++)
-		{
-    		analog_signal[i] = cJSON_GetArrayItem(array, i)->valueint;
-            ESP_LOGI(TAG, "analog_signal[%d]=%d",i, analog_signal[i]);
+	//send data to APP
+	strcpy(ble_send_msg, arg);
+	// ble_send_msg[strlen(arg)]='\0';
+
+	// strncpy(ble_send_msg, arg,sizeof(ble_send_msg));
+	// ble_send_msg[sizeof(ble_send_msg)-1]='\0';
+
+	ESP_LOGI(TAG, "ARG %s",ble_send_msg);
+	send_ble_cmd_notification();
+
+	// memset(ble_send_msg, 0, sizeof ble_send_msg);
+
+	if (cJSON_GetObjectItem(root, "id") !=NULL)
+	{
+		current_tag_id = cJSON_GetObjectItem(root,"id")->valueint;
+		ESP_LOGI(TAG, "ID=%d", current_tag_id);
+	}
+
+	if (cJSON_GetObjectItem(root, "st") !=NULL)
+	{
+		uint8_t state = cJSON_GetObjectItem(root,"st")->valueint;
+		m.status = state;
+		if (m.s.xpt){
+			ESP_LOGI(TAG, "xpt");
+		}
+		else {
+			ESP_LOGI(TAG, "hpt");
+		}
+		if (m.s.masked){
+			/* muted */
+			ESP_LOGI(TAG, "muted");
+		}
+		if (m.s.batteryproblem){
+			/* battery problem */
+			ESP_LOGI(TAG, "battery problem");
 		}
 	}
 
-	if (cJSON_GetObjectItem(root, DSP_COMMAND) !=NULL)
+	if (cJSON_GetObjectItem(root, "mag") !=NULL)
 	{
-		enum From_dsp_commands dsp_command = cJSON_GetObjectItem(root,"c")->valueint;
-		switch (status)
+		mag = cJSON_GetObjectItem(root,"st")->valuedouble;
+		ESP_LOGI(TAG, "magnitude=%lf", mag);
+	}
+
+	if (cJSON_GetObjectItem(root, "amp") != NULL)
+	{
+	    cJSON * array = cJSON_GetObjectItem(root, "amp");
+
+		for (uint16_t i = 0 ; i < sizeof(amp)/sizeof(double); i++)
 		{
-		case fd_search_ok:
-			ESP_LOGI(TAG, "From DSP: %s", "quick search has been started");
-			//xTaskCreate(main_activity_task, "start_vlf", 4096, NULL, 5, NULL);
-			break;
-		case fd_mute_ok:
-			ESP_LOGI(TAG, "From DSP: %s", "current tag was muted");
-			//xTaskCreate(quick_search_task, "start_vlf", 4096, NULL, 5, NULL);
-			break;
-		default:
-			break;
-		}	
+    		amp[i] = cJSON_GetArrayItem(array, i)->valuedouble;
+            ESP_LOGI(TAG, "analog_signal[%d]=%lf",i, amp[i]);
+		}
 	}
-
-	if (cJSON_GetObjectItem(root, F_DSP_D1) !=NULL)
-	{
-		D1 = cJSON_GetObjectItem(root,F_DSP_D1)->valueint;
-	}
-	if (cJSON_GetObjectItem(root, F_DSP_D2) !=NULL)
-	{
-		D2 = cJSON_GetObjectItem(root,F_DSP_D2)->valueint;
-	}
-	if (cJSON_GetObjectItem(root, F_DSP_D3) !=NULL)
-	{
-		D3 = cJSON_GetObjectItem(root,F_DSP_D3)->valueint;
-	}
-	if (cJSON_GetObjectItem(root, F_DSP_TAG_ID) !=NULL)
-	{
-		current_tag_id = cJSON_GetObjectItem(root,F_DSP_TAG_ID)->valueint;
-	}
-
-
-    app_json_serialize();
-	
     cJSON_Delete(root);
 }
